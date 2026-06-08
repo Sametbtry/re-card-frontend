@@ -11,7 +11,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col font-sans">
       <Navbar />
-      <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+      <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 flex flex-col mt-10">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

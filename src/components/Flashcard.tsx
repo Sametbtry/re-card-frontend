@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Volume2, Trash2, Edit2, Info } from 'lucide-react';
 
 interface FlashcardProps {
@@ -15,26 +15,51 @@ interface FlashcardProps {
     onEdit?: (card: any) => void;
     onInfo?: (card: any) => void;
     showControls?: boolean;
+    large?: boolean;
 }
 
-const Flashcard = ({ card, onReview, onDelete, onEdit, onInfo, showControls = false }: FlashcardProps) => {
+const Flashcard = ({ card, onReview, onDelete, onEdit, onInfo, showControls = false, large = false }: FlashcardProps) => {
     const [isFlipped, setIsFlipped] = useState(false);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const speak = (text: string, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const speakText = (text: string) => {
         if ('speechSynthesis' in window) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
-        } else {
-            alert('Tarayıcınız Web Speech API desteklemiyor.');
         }
     };
 
+    const speak = (text: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        speakText(text);
+    };
+
+    // Kart değişince otomatik telaffuz (sadece review modunda)
+    useEffect(() => {
+        if (!large) return;
+
+        window.speechSynthesis.cancel(); // Önceki sesi durdur
+        if (timerRef.current) clearTimeout(timerRef.current);
+
+        speakText(card.word);
+
+        if (card.example_sentence) {
+            timerRef.current = setTimeout(() => {
+                speakText(card.example_sentence!);
+            }, 1000);
+        }
+
+        return () => {
+            window.speechSynthesis.cancel();
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, [card.id, large]);
+
     return (
-        <div className="w-full max-w-sm mx-auto h-[400px] perspective-1000 cursor-pointer group" onClick={() => setIsFlipped(!isFlipped)}>
+        <div className={`w-full mx-auto perspective-1000 cursor-pointer group ${large ? 'max-w-lg h-[520px]' : 'max-w-sm h-[400px]'}`} onClick={() => setIsFlipped(!isFlipped)}>
             <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d shadow-2xl rounded-2xl ${isFlipped ? 'rotate-y-180' : ''}`}>
-                
+
                 {/* Ön Yüz */}
                 <div className="absolute inset-0 backface-hidden bg-gray-800/80 backdrop-blur-md rounded-2xl border border-gray-700/50 flex flex-col items-center p-6 justify-between hover:border-indigo-500/50 transition-colors">
                     {onInfo && (
@@ -68,19 +93,19 @@ const Flashcard = ({ card, onReview, onDelete, onEdit, onInfo, showControls = fa
                             <span className="text-gray-500">Görsel Yok</span>
                         </div>
                     )}
-                    
+
                     <div className="flex flex-col items-center w-full flex-grow justify-center">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-4">
                             <h3 className="text-3xl font-black tracking-tight text-white">{card.word}</h3>
                             <button onClick={(e) => speak(card.word, e)} className="p-3 bg-indigo-500/20 text-indigo-400 rounded-full hover:bg-indigo-500 hover:text-white transition-all shadow-sm">
-                                <Volume2 size={26} />
+                                <Volume2 size={large ? 32 : 26} />
                             </button>
                         </div>
                         {card.example_sentence && (
-                            <div className="flex items-start gap-2 w-full justify-center mt-2 px-2">
+                            <div className="flex items-start gap-2 w-full justify-center mt-4 px-2 mb-6">
                                 <p className="text-gray-400 text-sm italic text-center font-serif leading-relaxed text-pretty">{card.example_sentence}</p>
                                 <button onClick={(e) => speak(card.example_sentence || '', e)} className="p-2 bg-gray-700/50 text-gray-400 rounded-full hover:bg-gray-600 hover:text-white transition-colors shrink-0 mt-0.5">
-                                    <Volume2 size={18} />
+                                    <Volume2 size={large ? 22 : 18} />
                                 </button>
                             </div>
                         )}
@@ -93,13 +118,13 @@ const Flashcard = ({ card, onReview, onDelete, onEdit, onInfo, showControls = fa
                 {/* Arka Yüz */}
                 <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-xl border border-indigo-500/30 flex flex-col items-center justify-center p-8">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 rounded-2xl mix-blend-overlay"></div>
-                    
-                    <div className="text-center z-10 w-full mb-8 mt-auto flex-grow flex flex-col justify-center items-center">
+
+                    <div className="text-center z-10 w-full mt-10 mt-auto flex-grow flex flex-col justify-center items-center">
                         <div className="mb-4">
                             <p className="text-xl text-gray-500/40 font-medium mb-1 line-through decoration-gray-500/20">{card.word}</p>
                             <p className="text-4xl font-bold text-white drop-shadow-md">{card.translation}</p>
                         </div>
-                        
+
                         {(card.example_sentence || card.example_translation) && (
                             <div className="mt-4 p-4 w-full bg-gray-800/60 rounded-xl border border-gray-700/50 shadow-inner">
                                 {card.example_sentence && <p className="text-sm text-gray-500/50 italic mb-2 leading-relaxed">{card.example_sentence}</p>}
@@ -107,12 +132,12 @@ const Flashcard = ({ card, onReview, onDelete, onEdit, onInfo, showControls = fa
                             </div>
                         )}
                     </div>
-                    
+
                     {showControls && isFlipped && (
                         <div className="w-full grid grid-cols-3 gap-3 mt-auto z-10" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => {onReview?.(1); setIsFlipped(false);}} className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-red-500/40">Unuttum</button>
-                            <button onClick={() => {onReview?.(2); setIsFlipped(false);}} className="bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500 hover:text-white py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-orange-500/40">Zor</button>
-                            <button onClick={() => {onReview?.(3); setIsFlipped(false);}} className="bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500 hover:text-white py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-green-500/40">Kolay</button>
+                            <button onClick={() => { onReview?.(1); setIsFlipped(false); }} className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-red-500/40">Unuttum</button>
+                            <button onClick={() => { onReview?.(2); setIsFlipped(false); }} className="bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500 hover:text-white py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-orange-500/40">Zor</button>
+                            <button onClick={() => { onReview?.(3); setIsFlipped(false); }} className="bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500 hover:text-white py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-green-500/40">Kolay</button>
                         </div>
                     )}
                 </div>
