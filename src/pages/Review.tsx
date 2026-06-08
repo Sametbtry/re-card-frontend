@@ -8,6 +8,13 @@ const Review = () => {
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [loading, setLoading] = useState(true);
 
+    // Mobil/PWA'da scroll'u engeller
+    useEffect(() => {
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = prev; };
+    }, []);
+
     useEffect(() => {
         const fetchDueCards = async () => {
             try {
