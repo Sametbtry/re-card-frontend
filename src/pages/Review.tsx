@@ -18,43 +18,8 @@ const Review = () => {
     useEffect(() => {
         const fetchDueCards = async () => {
             try {
-                const [cardsRes, reviewsRes, allProgressRes] = await Promise.all([
-                    api.get('/cards'),
-                    api.get('/cards/review/'),
-                    api.get('/cards/review/library')
-                ]);
-
-                const allCards = cardsRes.data;
-                const dueReviews = reviewsRes.data;
-
-                const dueCardIds = new Set(dueReviews.map((r: any) => r.card_id));
-                const allProgressIds = new Set(allProgressRes.data.map((r: any) => r.card_id));
-
-                const cardsToReview = allCards.filter((card: any) =>
-                    !allProgressIds.has(card.id) || dueCardIds.has(card.id)
-                );
-
-                // Gecikmiş kartları sıranın en sonuna koyacak şekilde sıralama yapıyoruz
-                const dueReviewsMap = new Map<number, any>(
-                    dueReviews.map((r: any) => [r.card_id, r])
-                );
-
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                cardsToReview.sort((a: any, b: any) => {
-                    const progressA = dueReviewsMap.get(a.id);
-                    const progressB = dueReviewsMap.get(b.id);
-
-                    const isOverdueA = progressA && new Date(progressA.next_review_date).setHours(0, 0, 0, 0) < today.getTime();
-                    const isOverdueB = progressB && new Date(progressB.next_review_date).setHours(0, 0, 0, 0) < today.getTime();
-
-                    if (isOverdueA && !isOverdueB) return 1;   // a en sona gider
-                    if (!isOverdueA && isOverdueB) return -1;  // b en sona gider
-                    return 0; // Sıralamayı koru
-                });
-
-                setDueCards(cardsToReview);
+                const res = await api.get('/cards/review/due_cards');
+                setDueCards(res.data);
             } catch (err) {
                 console.error(err);
             } finally {

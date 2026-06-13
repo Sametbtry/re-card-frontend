@@ -6,26 +6,24 @@ import { PlusCircle, Sparkles, GraduationCap } from 'lucide-react';
 const Home = () => {
     const [publicCards, setPublicCards] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const cardsPerPage = 8;
 
     useEffect(() => {
         const fetchCards = async () => {
             try {
-                const res = await api.get('/cards/public');
-                // Sort by latest created first
-                const sorted = res.data.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-                setPublicCards(sorted);
+                const skip = (currentPage - 1) * cardsPerPage;
+                const res = await api.get(`/cards/public?skip=${skip}&limit=${cardsPerPage}`);
+                setPublicCards(res.data.items);
+                setTotalPages(res.data.total_pages);
             } catch (err) {
                 console.error("Failed to fetch public cards", err);
             }
         };
         fetchCards();
-    }, []);
+    }, [currentPage]);
 
-    const indexOfLastCard = currentPage * cardsPerPage;
-    const indexOfFirstCard = indexOfLastCard - cardsPerPage;
-    const currentCards = publicCards.slice(indexOfFirstCard, indexOfLastCard);
-    const totalPages = Math.ceil(publicCards.length / cardsPerPage);
+    const currentCards = publicCards;
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -114,46 +112,69 @@ const Home = () => {
                 </div>
 
                 {totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-2 mt-12 mb-8">
-                        <button
-                            onClick={() => {
-                                setCurrentPage(p => Math.max(1, p - 1));
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            disabled={currentPage === 1}
-                            className="px-4 py-2 rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-gray-800/80 disabled:hover:text-gray-300"
-                        >
-                            Önceki
-                        </button>
-                        <div className="flex gap-1 flex-wrap justify-center">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <div className="flex flex-wrap justify-center items-center gap-2 mt-12 mb-8">
+                    <button
+                        onClick={() => {
+                            setCurrentPage(p => Math.max(1, p - 1));
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-gray-800/80 disabled:hover:text-gray-300"
+                    >
+                        Önceki
+                    </button>
+                    <div className="flex gap-1 justify-center">
+                        {(() => {
+                            const maxPagesToShow = 5;
+                            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                            let endPage = startPage + maxPagesToShow - 1;
+
+                            if (endPage > totalPages) {
+                                endPage = totalPages;
+                                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                            }
+
+                            const pages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+
+                            return pages.map(page => (
                                 <button
                                     key={page}
                                     onClick={() => {
                                         setCurrentPage(page);
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }}
-                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${currentPage === page
-                                        ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/30'
-                                        : 'bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-gray-700'
+                                    className={`w-8 h-8 md:w-10 md:h-10 text-sm md:text-base rounded-xl flex items-center justify-center transition-all ${currentPage === page
+                                            ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/30'
+                                            : 'bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-gray-700'
                                         }`}
                                 >
                                     {page}
                                 </button>
-                            ))}
-                        </div>
-                        <button
-                            onClick={() => {
-                                setCurrentPage(p => Math.min(totalPages, p + 1));
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            disabled={currentPage === totalPages}
-                            className="px-4 py-2 rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-gray-800/80 disabled:hover:text-gray-300"
-                        >
-                            Sonraki
-                        </button>
+                            ));
+                        })()}
                     </div>
-                )}
+                    <button
+                        onClick={() => {
+                            setCurrentPage(p => Math.min(totalPages, p + 1));
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-gray-800/80 disabled:hover:text-gray-300"
+                    >
+                        Sonraki
+                    </button>
+                    <button
+                        onClick={() => {
+                            setCurrentPage(totalPages);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-gray-800/80 disabled:hover:text-gray-300"
+                    >
+                        Son Sayfa
+                    </button>
+                </div>
+            )}
             </div>
         </div>
     );
