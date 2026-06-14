@@ -115,13 +115,13 @@ const Home = () => {
                 <div className="flex flex-wrap justify-center items-center gap-2 mt-12 mb-8">
                     <button
                         onClick={() => {
-                            setCurrentPage(p => Math.max(1, p - 1));
+                            setCurrentPage(1);
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         disabled={currentPage === 1}
                         className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-gray-800/80 disabled:hover:text-gray-300"
                     >
-                        Önceki
+                        İlk Sayfa
                     </button>
                     <div className="flex gap-1 justify-center">
                         {(() => {
@@ -153,16 +153,6 @@ const Home = () => {
                             ));
                         })()}
                     </div>
-                    <button
-                        onClick={() => {
-                            setCurrentPage(p => Math.min(totalPages, p + 1));
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-gray-800/80 disabled:hover:text-gray-300"
-                    >
-                        Sonraki
-                    </button>
                     <button
                         onClick={() => {
                             setCurrentPage(totalPages);
